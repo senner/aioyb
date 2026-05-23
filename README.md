@@ -29,6 +29,15 @@ has a known compatibility bug parsing YB's server version string.
 - **Version-string fix** — patches asyncpg's `_parse_server_version`
   to accept YB's mixed string format (asyncpg's strict integer parser
   rejects `"11.2-YB-2.20.0.0-b0"`).
+- **Connection Manager (port 6433) integration** — YB's server-side
+  transaction-mode pooler is an optional tserver feature
+  (`--enable_ysql_conn_mgr=true`). aioyb keeps `yb_servers()` discovery
+  and health pings on the direct port (5433) so we test the actual
+  backend, but routes application traffic to the conn-mgr port if
+  `conn_mgr_port=` is set. Stacks cleanly with client-side load
+  balancing: aioyb picks the tserver, the pooler multiplexes within
+  it. Skip it (`conn_mgr_port=None`, the default) for tservers without
+  the pooler enabled.
 - **Pool API mirrors `asyncpg.create_pool`** so existing code drops in:
   `pool = await aioyb.create_pool(dsn, load_balance=True, topology_keys=...)`.
 

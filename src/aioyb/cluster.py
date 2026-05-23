@@ -94,6 +94,21 @@ class YBCluster:
     seed_dsn: str
     refresh_interval: float = DEFAULT_REFRESH_INTERVAL
     topology_keys: Optional[str] = None
+    # YugabyteDB tserver exposes two YSQL ports:
+    #   5433 — direct YSQL (the real Postgres backend). Used for DDL,
+    #          migrations, `yb_servers()` discovery, and HealthMonitor
+    #          pings (we want to test the backend, not the pooler).
+    #   6433 — Connection Manager (optional, requires
+    #          `--enable_ysql_conn_mgr=true`). Transaction-mode pooler
+    #          baked into newer YB versions; cuts per-tserver memory
+    #          overhead on high-fan-in workloads.
+    # `direct_port` is always used for discovery + health. `conn_mgr_port`
+    # is used for app traffic when set; if None, app traffic also takes
+    # the direct port (i.e. no server-side pooling). The two are
+    # complementary, not competing: aioyb does client-side load balancing
+    # across tservers, the conn mgr multiplexes within each one.
+    direct_port: int = 5433
+    conn_mgr_port: Optional[int] = None
 
     # populated at runtime
     _nodes: list[TServer] = field(default_factory=list)
@@ -104,6 +119,10 @@ class YBCluster:
 
     def __post_init__(self):
         self._parsed_keys = _parse_topology_keys(self.topology_keys or "")
+
+    def app_port(self) -> int:
+        """Port that application traffic uses — pooler if configured, else direct."""
+        return self.conn_mgr_port if self.conn_mgr_port is not None else self.direct_port
 
     async def start(self, *, health: object = None, health_connect_kwargs: Optional[dict] = None) -> None:
         """Bootstrap node list and start periodic refresh + health monitor.

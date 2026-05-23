@@ -1,6 +1,6 @@
 [project]
 name = "aioyb"
-version = "0.0.1.dev0"
+version = "0.0.2.dev0"
 description = "Async smart-driver features for YugabyteDB on asyncpg — topology-aware load balancing, automatic tablet-server discovery, and a fix for the known YB version-string parsing bug."
 requires-python = ">=3.12"
 license = "Apache-2.0"

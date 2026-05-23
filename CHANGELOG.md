@@ -5,6 +5,20 @@ All notable changes to **aioyb** are documented here.
 This project adheres to [Semantic Versioning](https://semver.org/).
 Until 0.1.0 the API may break between any two releases.
 
+## 0.0.2.dev0 — 2026-05-23
+
+### Added
+- **Connection Manager (port 6433) integration.** `create_pool()` and
+  `YBCluster` accept `direct_port=` (default 5433) and `conn_mgr_port=`
+  (default `None` = off, set to 6433 when the cluster has
+  `--enable_ysql_conn_mgr=true`). Discovery + health always go to the
+  direct port so we test the real Postgres backend; app traffic goes to
+  the pooler if set. The two layers are complementary — aioyb picks the
+  tserver (client-side load balance), the conn mgr multiplexes within
+  it (server-side pool).
+- `YBCluster.app_port()` helper returns whichever port app traffic
+  should use.
+
 ## 0.0.1.dev0 — 2026-05-23
 
 Initial scaffold release. Pre-alpha; published to claim the PyPI name

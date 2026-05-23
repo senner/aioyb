@@ -99,6 +99,8 @@ async def create_pool(
     load_balance: bool = False,
     topology_keys: Optional[str] = None,
     yb_servers_refresh_interval: float = DEFAULT_REFRESH_INTERVAL,
+    direct_port: int = 5433,
+    conn_mgr_port: Optional[int] = None,
     cluster: Optional[YBCluster] = None,
     min_size: int = 1,
     max_size: int = 10,
@@ -114,6 +116,15 @@ async def create_pool(
         e.g. ``"cloud1.region1.zone1:1,cloud2.region2.zone2:2"``
     :param yb_servers_refresh_interval: how often (seconds) to re-discover
         the cluster membership
+    :param direct_port: YB's direct YSQL port (default 5433). Used for
+        `yb_servers()` discovery and HealthMonitor pings — we always want
+        these against the real Postgres backend, not the pooler.
+    :param conn_mgr_port: YB Connection Manager port (default None = off,
+        commonly 6433 when enabled via `--enable_ysql_conn_mgr=true`). When
+        set, application traffic is routed through the conn manager on
+        each selected tserver. This stacks cleanly with client-side load
+        balancing: aioyb picks the tserver, the pooler multiplexes within
+        it. When None, app traffic goes direct (no server-side pooling).
     :param cluster: optional pre-built `YBCluster` (shares state across
         multiple pools — useful when one app holds primary + replica pools)
     """
@@ -122,6 +133,8 @@ async def create_pool(
             seed_dsn=dsn,
             refresh_interval=yb_servers_refresh_interval,
             topology_keys=topology_keys,
+            direct_port=direct_port,
+            conn_mgr_port=conn_mgr_port,
         )
         await cluster.start()
 
@@ -134,9 +147,12 @@ async def create_pool(
         node = pool_holder["pool"]._next_node() if "pool" in pool_holder else None
         if node is None:
             return await asyncpg.connect(dsn=dsn, **asyncpg_kwargs)
+        # App traffic uses cluster.app_port() — pooler (6433) if configured,
+        # else direct (5433). Either way the host is the selected tserver.
+        port = cluster.app_port() if cluster is not None else node.port
         return await asyncpg.connect(
             host=node.host,
-            port=node.port,
+            port=port,
             **{k: v for k, v in asyncpg_kwargs.items() if k not in ("host", "port")},
         )
 
