@@ -1,0 +1,69 @@
+[project]
+name = "aioyb"
+version = "0.0.1.dev0"
+description = "Async smart-driver features for YugabyteDB on asyncpg — topology-aware load balancing, automatic tablet-server discovery, and a fix for the known YB version-string parsing bug."
+requires-python = ">=3.12"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+readme = "README.md"
+authors = [{ name = "Talin Senner", email = "ttsenner@gmail.com" }]
+keywords = [
+  "yugabytedb",
+  "asyncpg",
+  "postgres",
+  "postgresql",
+  "asyncio",
+  "smart-driver",
+  "load-balancing",
+  "distributed-sql",
+  "database",
+]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Framework :: AsyncIO",
+  "Topic :: Database",
+  "Topic :: Database :: Database Engines/Servers",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Intended Audience :: Developers",
+  "Development Status :: 2 - Pre-Alpha",
+  "Operating System :: OS Independent",
+  "Typing :: Typed",
+]
+
+dependencies = [
+  "asyncpg>=0.30",
+]
+
+[project.urls]
+Homepage = "https://github.com/senner/aioyb"
+Repository = "https://github.com/senner/aioyb"
+Issues = "https://github.com/senner/aioyb/issues"
+Changelog = "https://github.com/senner/aioyb/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+  "pytest-asyncio>=0.23",
+  "ruff>=0.6",
+  "mypy>=1.11",
+]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+aioyb = ["py.typed"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
